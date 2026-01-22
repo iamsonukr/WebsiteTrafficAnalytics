@@ -1,8 +1,6 @@
-import { VisitorLiteModel } from "../models/visitor.model.js";
-import VisitorAllModel from "../models/visitorAll.model.js";
 import { checkReturningVisitor, generateVisitorId, getLocationFromIP, parseUserAgent } from "../utils/visitorHelpers.js";
 
-
+import {VisitorLiteModel, VisitorAllModel} from "../models/visitor.model.js";
 
 const getVisitorLiteDetails= async (req, res) => {
     try {
