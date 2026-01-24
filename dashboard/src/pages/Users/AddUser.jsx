@@ -328,7 +328,7 @@ const AddUser = ({ isOpen, closeModal, user, fetchUsers }) => {
                 
                 if (response.status === 200) {
                     alert("User updated successfully");
-                    return
+                    // return
                     closeModal();
                     window.location.reload();
                 } else {
