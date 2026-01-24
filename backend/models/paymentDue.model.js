@@ -49,6 +49,10 @@ const paymentDueSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    showFullScreen:{
+      type: Boolean,
+        default: false,
+    },
 
     lastReminderSentAt: {
       type: Date,

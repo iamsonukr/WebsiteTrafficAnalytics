@@ -11,6 +11,7 @@ const jwtAuth = async (req, res, next) => {
   
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("Decoded JWT:", decoded);
     const user = await UserModel.findById(decoded.id); // Use decoded.id or decoded.userId based on your token structure
     
     if (!user) {
