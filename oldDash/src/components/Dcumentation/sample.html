@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Component Documentation - HTML Version</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .section h3 {
+            color: #555;
+            font-size: 1.5em;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        .section p {
+            margin-bottom: 15px;
+            color: #666;
+        }
+
+        .code-block {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .code-block pre {
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .copy-btn:hover {
+            background-color: #5568d3;
+        }
+
+        .copy-btn.copied {
+            background-color: #10b981;
+        }
+
+        .feature-list {
+            list-style: none;
+            margin: 20px 0;
+        }
+
+        .feature-list li {
+            padding: 10px 0 10px 30px;
+            position: relative;
+            color: #555;
+        }
+
+        .feature-list li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background-color: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tr:hover {
+            background-color: #f9fafb;
+        }
+
+        .alert {
+            background-color: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 16px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 8px;
+        }
+
+        .alert-content {
+            color: #1e40af;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Component Documentation</h1>
+            <p>Documentation for the Home page and SystemBanner components with configuration-based display logic.</p>
+        </div>
+
+        <!-- Home Component Section -->
+        <div class="section">
+            <h2>Home Page Implementation</h2>
+
+            <h3>Description</h3>
+            <p>The Home page fetches external configuration data to determine whether to display a system banner. It
+                includes analytics tracking initialization and conditionally renders the banner based on the
+                configuration response.</p>
+
+            <h3>Features</h3>
+            <ul class="feature-list">
+                <li>Fetches configuration from external API endpoint</li>
+                <li>Includes analytics/tracking headers</li>
+                <li>Conditionally displays banner based on payment status</li>
+                <li>Silent error handling for failed requests</li>
+                <li>State management for banner visibility</li>
+            </ul>
+
+            <h3>Code</h3>
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyCode(this, 'home-code')">Copy Code</button>
+                <pre id="home-code">&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;Home Page&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div id="banner-container"&gt;&lt;/div&gt;
+    &lt;div id="main-content"&gt;
+        &lt;!-- Your main content here --&gt;
+    &lt;/div&gt;
+
+    &lt;script&gt;
+        (function() {
+            var sysConfig = null;
+            var showBanner = false;
+
+            function trackPageView() {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', 'https://websitetrafficanalytics.onrender.com/api/meta/site-config/6972038615823e15ffc42bf5', true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.setRequestHeader('X-Tracker-ID', 'wa-' + Date.now());
+                
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            var data = response.data;
+                            console.log('Analytics data received:', data);
+                            
+                            if (data && !data.paymentComplete && data.showOnHomepage) {
+                                sysConfig = data;
+                                showBanner = true;
+                                renderBanner();
+                            }
+                        } catch (err) {
+                            // Silent fail - normal for analytics
+                        }
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    // Silent fail - normal for analytics
+                };
+                
+                xhr.send();
+            }
+
+            function renderBanner() {
+                if (!showBanner || !sysConfig) return;
+                
+                var container = document.getElementById('banner-container');
+                container.innerHTML = createBannerHTML(sysConfig);
+                attachBannerEvents();
+            }
+
+            function createBannerHTML(config) {
+                var isFullScreen = config.showFullScreen === "true" || config.showFullScreen === true;
+                
+                if (isFullScreen) {
+                    return createFullScreenBanner(config);
+                } else {
+                    return createInlineBanner(config);
+                }
+            }
+
+            function createFullScreenBanner(config) {
+                var html = '&lt;div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;"&gt;';
+                html += '&lt;div style="background-color: white; border-radius: 12px; max-width: 600px; width: 100%; padding: 30px; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.3);"&gt;';
+                html += '&lt;button onclick="dismissBanner()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 24px; cursor: pointer; color: #666;"&gt;×&lt;/button&gt;';
+                html += '&lt;div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;"&gt;';
+                html += '&lt;span style="color: #ef4444; font-size: 24px;"&gt;⚠&lt;/span&gt;';
+                html += '&lt;h2 style="margin: 0; font-size: 24px; color: #111;"&gt;' + (config.messageTitle || 'Important Notice') + '&lt;/h2&gt;';
+                html += '&lt;/div&gt;';
+                html += '&lt;p style="color: #555; line-height: 1.6; margin-bottom: 20px;"&gt;' + config.message + '&lt;/p&gt;';
+                
+                if (config.amountDue) {
+                    html += '&lt;div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 20px;"&gt;';
+                    html += '&lt;p style="margin: 0 0 8px 0; font-weight: 600; color: #991b1b;"&gt;Outstanding Amount: ' + config.currency + ' ' + config.amountDue.toLocaleString() + '&lt;/p&gt;';
+                    
+                    if (config.dueDate) {
+                        html += '&lt;p style="margin: 0; color: #991b1b;"&gt;Due Date: ' + new Date(config.dueDate).toLocaleDateString() + '&lt;/p&gt;';
+                    }
+                    
+                    html += '&lt;/div&gt;';
+                }
+                
+                html += '&lt;button onclick="dismissBanner()" style="width: 100%; background-color: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;"&gt;I Understand&lt;/button&gt;';
+                html += '&lt;/div&gt;';
+                html += '&lt;/div&gt;';
+                
+                return html;
+            }
+
+            function createInlineBanner(config) {
+                var html = '&lt;div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; margin: 20px 0; border-radius: 6px; position: relative;"&gt;';
+                html += '&lt;button onclick="dismissBanner()" style="position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 20px; cursor: pointer; color: #666;"&gt;×&lt;/button&gt;';
+                html += '&lt;div style="display: flex; align-items: flex-start; gap: 12px; padding-right: 30px;"&gt;';
+                html += '&lt;span style="color: #3b82f6; font-size: 20px;"&gt;⚠&lt;/span&gt;';
+                html += '&lt;div&gt;';
+                html += '&lt;h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #1e40af;"&gt;' + (config.messageTitle || 'Notice') + '&lt;/h3&gt;';
+                html += '&lt;p style="margin: 0; color: #1e40af;"&gt;' + config.message + '&lt;/p&gt;';
+                html += '&lt;/div&gt;';
+                html += '&lt;/div&gt;';
+                html += '&lt;/div&gt;';
+                
+                return html;
+            }
+
+            function attachBannerEvents() {
+                // Events are handled via onclick attributes
+            }
+
+            window.dismissBanner = function() {
+                showBanner = false;
+                var container = document.getElementById('banner-container');
+                if (container) {
+                    container.innerHTML = '';
+                }
+            };
+
+            // Initialize on page load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', trackPageView);
+            } else {
+                trackPageView();
+            }
+        })();
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+            </div>
+        </div>
+
+        <!-- SystemBanner Component Section -->
+        <div class="section">
+            <h2>SystemBanner Component</h2>
+
+            <h3>Description</h3>
+            <p>A flexible banner component that displays system notices or payment reminders. It supports two display
+                modes: a full-screen modal overlay and a compact inline banner. The component is driven by configuration
+                data and includes payment information display capabilities.</p>
+
+            <h3>Features</h3>
+            <ul class="feature-list">
+                <li>Two display modes: fullscreen modal and inline banner</li>
+                <li>Displays payment information (amount, currency, due date)</li>
+                <li>Customizable title and message content</li>
+                <li>Dismissible with callback handler</li>
+                <li>Conditional rendering based on payment status</li>
+                <li>Works on all platforms including WordPress</li>
+            </ul>
+
+            <h3>Configuration Object</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>_id</td>
+                            <td>string</td>
+                            <td>Unique identifier</td>
+                        </tr>
+                        <tr>
+                            <td>clientName</td>
+                            <td>string</td>
+                            <td>Name of the client</td>
+                        </tr>
+                        <tr>
+                            <td>website</td>
+                            <td>string</td>
+                            <td>Website URL</td>
+                        </tr>
+                        <tr>
+                            <td>amountDue</td>
+                            <td>number</td>
+                            <td>Outstanding payment amount</td>
+                        </tr>
+                        <tr>
+                            <td>currency</td>
+                            <td>string</td>
+                            <td>Currency code (e.g., USD, EUR)</td>
+                        </tr>
+                        <tr>
+                            <td>dueDate</td>
+                            <td>string</td>
+                            <td>Payment due date (ISO format)</td>
+                        </tr>
+                        <tr>
+                            <td>paymentComplete</td>
+                            <td>boolean</td>
+                            <td>Whether payment is completed</td>
+                        </tr>
+                        <tr>
+                            <td>messageTitle</td>
+                            <td>string</td>
+                            <td>Banner title text</td>
+                        </tr>
+                        <tr>
+                            <td>message</td>
+                            <td>string</td>
+                            <td>Banner message content</td>
+                        </tr>
+                        <tr>
+                            <td>showOnHomepage</td>
+                            <td>boolean</td>
+                            <td>Whether to display banner</td>
+                        </tr>
+                        <tr>
+                            <td>showFullScreen</td>
+                            <td>string | boolean</td>
+                            <td>Display mode ("true" or true for fullscreen)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Standalone Component Code</h3>
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyCode(this, 'banner-code')">Copy Code</button>
+                <pre id="banner-code">&lt;!-- Add this where you want the banner to appear --&gt;
+&lt;div id="system-banner"&gt;&lt;/div&gt;
+
+&lt;script&gt;
+    function renderSystemBanner(config, containerId) {
+        if (!config || config.paymentComplete || !config.showOnHomepage) {
+            return;
+        }
+
+        var container = document.getElementById(containerId);
+        if (!container) return;
+
+        var isFullScreen = config.showFullScreen === "true" || config.showFullScreen === true;
+        
+        if (isFullScreen) {
+            container.innerHTML = createFullScreenBanner(config);
+        } else {
+            container.innerHTML = createInlineBanner(config);
+        }
+    }
+
+    function createFullScreenBanner(config) {
+        var html = '&lt;div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;"&gt;';
+        html += '&lt;div style="background-color: white; border-radius: 12px; max-width: 600px; width: 100%; padding: 30px; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.3);"&gt;';
+        html += '&lt;button onclick="dismissSystemBanner()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 24px; cursor: pointer; color: #666;"&gt;×&lt;/button&gt;';
+        html += '&lt;div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;"&gt;';
+        html += '&lt;span style="color: #ef4444; font-size: 24px;"&gt;⚠&lt;/span&gt;';
+        html += '&lt;h2 style="margin: 0; font-size: 24px; color: #111;"&gt;' + (config.messageTitle || 'Important Notice') + '&lt;/h2&gt;';
+        html += '&lt;/div&gt;';
+        html += '&lt;p style="color: #555; line-height: 1.6; margin-bottom: 20px;"&gt;' + config.message + '&lt;/p&gt;';
+        
+        if (config.amountDue) {
+            html += '&lt;div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 20px;"&gt;';
+            html += '&lt;p style="margin: 0 0 8px 0; font-weight: 600; color: #991b1b;"&gt;Outstanding Amount: ' + config.currency + ' ' + config.amountDue.toLocaleString() + '&lt;/p&gt;';
+            
+            if (config.dueDate) {
+                html += '&lt;p style="margin: 0; color: #991b1b;"&gt;Due Date: ' + new Date(config.dueDate).toLocaleDateString() + '&lt;/p&gt;';
+            }
+            
+            html += '&lt;/div&gt;';
+        }
+        
+        html += '&lt;button onclick="dismissSystemBanner()" style="width: 100%; background-color: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;"&gt;I Understand&lt;/button&gt;';
+        html += '&lt;/div&gt;';
+        html += '&lt;/div&gt;';
+        
+        return html;
+    }
+
+    function createInlineBanner(config) {
+        var html = '&lt;div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; margin: 20px 0; border-radius: 6px; position: relative;"&gt;';
+        html += '&lt;button onclick="dismissSystemBanner()" style="position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 20px; cursor: pointer; color: #666;"&gt;×&lt;/button&gt;';
+        html += '&lt;div style="display: flex; align-items: flex-start; gap: 12px; padding-right: 30px;"&gt;';
+        html += '&lt;span style="color: #3b82f6; font-size: 20px;"&gt;⚠&lt;/span&gt;';
+        html += '&lt;div&gt;';
+        html += '&lt;h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #1e40af;"&gt;' + (config.messageTitle || 'Notice') + '&lt;/h3&gt;';
+        html += '&lt;p style="margin: 0; color: #1e40af;"&gt;' + config.message + '&lt;/p&gt;';
+        html += '&lt;/div&gt;';
+        html += '&lt;/div&gt;';
+        html += '&lt;/div&gt;';
+        
+        return html;
+    }
+
+    function dismissSystemBanner() {
+        var container = document.getElementById('system-banner');
+        if (container) {
+            container.innerHTML = '';
+        }
+    }
+
+    // Example usage:
+    // var exampleConfig = {
+    //     messageTitle: "Payment Reminder",
+    //     message: "Your subscription payment is pending.",
+    //     amountDue: 99.99,
+    //     currency: "USD",
+    //     dueDate: "2026-02-01",
+    //     paymentComplete: false,
+    //     showOnHomepage: true,
+    //     showFullScreen: "true"
+    // };
+    // renderSystemBanner(exampleConfig, 'system-banner');
+&lt;/script&gt;</pre>
+            </div>
+        </div>
+
+        <!-- Usage Note -->
+        <div class="section">
+            <div class="alert">
+                <div class="alert-title">Usage Note</div>
+                <div class="alert-content">
+                    This implementation uses vanilla JavaScript with no external dependencies. It works on all modern
+                    browsers and platforms including WordPress. All styles are inline to ensure maximum compatibility.
+                    The code uses XMLHttpRequest for API calls to support older browsers, but you can replace it with
+                    fetch() if you only need to support modern browsers.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyCode(button, codeId) {
+            var codeElement = document.getElementById(codeId);
+            var textArea = document.createElement('textarea');
+            textArea.value = codeElement.textContent;
+            document.body.appendChild(textArea);
+            textArea.select();
+
+            try {
+                document.execCommand('copy');
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+
+                setTimeout(function () {
+                    button.textContent = 'Copy Code';
+                    button.classList.remove('copied');
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+            }
+
+            document.body.removeChild(textArea);
+        }
+    </script>
+</body>
+
+</html>

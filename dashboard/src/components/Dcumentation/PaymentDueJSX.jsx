@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Copy, Check, AlertCircle, Code } from 'lucide-react';
+import { Copy, Check, AlertCircle, Code } from 'lucide-react'
+import { Link } from 'react-router-dom';
 
-export default function Documentation() {
+export default function PaymentDueJSX() {
   const [copiedSection, setCopiedSection] = useState(null);
 
   const copyToClipboard = (text, section) => {
@@ -180,7 +181,7 @@ export default SystemBanner;`;
             <h1 className="text-4xl font-bold text-gray-900">Component Documentation</h1>
           </div>
           <p className="text-lg text-gray-600">
-            Documentation for the Home page and SystemBanner components with configuration-based display logic.
+            Documentation for the Home page and SystemBanner components with configuration-based display logic. To see the HTML Version click <Link to="/payment-html" className="text-blue-600 underline">here</Link>.
           </p>
         </div>
 

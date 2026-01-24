@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API_BASE, ENDPOINTS } from '../../config/api';
+import { ENDPOINTS } from '../../config/api';
 import { getAuthHeaders } from '../../utils/authUtils';
 import DateFilter from './DateFilter';
 import StatsCard from './StatsCard';
@@ -7,6 +7,8 @@ import DeviceChart from './DeviceChart';
 import BrowserChart from './BrowserChart';
 import LocationChart from './LocationChart';
 import TimeChart from './TimeChart';
+import axios from 'axios';
+import { healthService } from '../../api/axios';
 
 const AnalyticsTab = () => {
   const [analytics, setAnalytics] = useState(null);
@@ -24,11 +26,10 @@ const AnalyticsTab = () => {
       if (dateRange.startDate) query.append('startDate', dateRange.startDate);
       if (dateRange.endDate) query.append('endDate', dateRange.endDate);
       
-      const res = await fetch(`${API_BASE}${ENDPOINTS.ANALYTICS}?${query}`, {
+      const res = await healthService.get(`/${ENDPOINTS.ANALYTICS}?${query}`, {
         headers: getAuthHeaders()
       });
-      const data = await res.json();
-      setAnalytics(data.analytics);
+      setAnalytics(res.analytics);
     } catch (err) {
       console.error('Fetch analytics error:', err);
     } finally {

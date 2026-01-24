@@ -1,0 +1,566 @@
+import React, { useEffect, useState } from 'react'
+import { Moon, Sun, Check, Star, Calendar, Image, Award, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { healthService } from '../../api/axios';
+import { useAuth } from '../../context/AuthContext';
+import { toast } from 'react-toastify';
+import Alert from '../../components/ui/alert/Alert';
+import { usePoster } from '../../context/PosterContext';
+import { capitalizePlanName, getButtonStyle, getButtonText } from './pricingComponents';
+
+
+const PricingDashboard = () => {
+    const [darkMode, setDarkMode] = useState(false);
+    const [expandedFaq, setExpandedFaq] = useState(null);
+    const [plans, setPlans] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const { profileData, token } = useAuth();
+    const { cart, setCart } = usePoster();
+
+    const getPlans = async () => {
+        try {
+            const response = await healthService.get('/subscription/subscription-plans')
+            // Sort plans by price (lowest first)
+            const sortedPlans = response.data.data.sort((a, b) => a.price - b.price)
+            setPlans(sortedPlans)
+        } catch (error) {
+            console.log(error)
+            toast.error("Failed to load plans")
+            setPlans([])
+        }
+    }
+
+    useEffect(() => {
+        const isDark = localStorage.getItem('darkMode') === 'true';
+        setDarkMode(isDark);
+        getPlans();
+        
+        // Load Razorpay script
+        const loadRazorpayScript = () => {
+            return new Promise((resolve) => {
+                const script = document.createElement('script');
+                script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+                script.onload = () => {
+                    resolve(true);
+                };
+                script.onerror = () => {
+                    resolve(false);
+                };
+                document.body.appendChild(script);
+            });
+        };
+        
+        loadRazorpayScript();
+    }, []);
+
+    const toggleDarkMode = () => {
+        const newMode = !darkMode;
+        setDarkMode(newMode);
+        localStorage.setItem('darkMode', newMode.toString());
+    };
+
+    const formatPrice = (price) => {
+        if (price === 0) return '₹0';
+        return `₹${price}`;
+    };
+
+    const getPeriod = (price) => {
+        if (price === 0) return 'forever';
+        return 'per month';
+    };
+
+    const renderFeatures = (plan) => {
+        const features = [
+            {
+                label: `${plan.photoUploadPerEvent || 0} ${plan.photoUploadPerEvent === 1 ? 'Photo' : 'Photos'} per Event`,
+                enabled: true
+            },
+            {
+                label: `${plan.templatePerEvent || 0} ${plan.templatePerEvent === 1 ? 'Template' : 'Templates'} per Event`,
+                enabled: true
+            },
+            {
+                label: 'Watermark',
+                enabled: plan.showWatermark
+            },
+            {
+                label: 'Designation Feature',
+                enabled: plan.showDesignation
+            }
+        ];
+
+        return features.map((feature, index) => (
+            <li key={index} className="flex items-center">
+                {feature.enabled ? (
+                    <Check 
+                        className="w-5 h-5 mr-3 flex-shrink-0 text-green-500" 
+                    />
+                ) : (
+                    <X 
+                        className="w-5 h-5 mr-3 flex-shrink-0 text-gray-300 dark:text-gray-600" 
+                    />
+                )}
+                <span className={`text-sm ${
+                    !feature.enabled 
+                        ? 'text-gray-400 dark:text-gray-500 line-through' 
+                        : ''
+                }`}>
+                    {feature.label}
+                </span>
+            </li>
+        ));
+    };
+
+    const handleSubscriptionUpdate = async (planId, paymentId = null, orderId = null) => {
+        const currentDate = new Date();
+        const endDate = new Date();
+        endDate.setDate(currentDate.getDate() + 31); // Add 31 days
+
+        const planDetails = {
+            subscriptionPlanId: planId,
+            startDate: currentDate,
+            endDate: endDate,
+            ...(paymentId && { paymentId }),
+            ...(orderId && { orderId })
+        }
+
+        const subMappingId = profileData?.subscriptionDetails?._id;
+        
+        if (!subMappingId) {
+            toast.error("Subscription details not found");
+            return false;
+        }
+
+        try {
+            const response = await healthService.post(
+                `/subscription-mapping/update-subscription-mapping/${subMappingId}`, 
+                planDetails
+            );
+            
+            if (response?.status === 200) {
+                toast.success("Plan Applied Successfully! 🎉");
+                // Optionally refresh profile data here
+                return true;
+            }
+            
+            console.log("Subscription update response:", response);
+            return false;
+        } catch (error) {
+            console.error("Subscription update error:", error);
+            toast.error("Failed to apply plan");
+            return false;
+        }
+    }
+
+    const initiateBuying = async (plan) => {
+        console.log("Initiating purchase for plan:", plan.planName, "ID:", plan._id);
+        
+        // For free plans, directly update subscription
+        if (plan.price === 0) {
+            setLoading(true);
+            const success = await handleSubscriptionUpdate(plan._id);
+            setLoading(false);
+            return;
+        }
+
+        // For paid plans, set cart and initiate payment
+        setCart(plan);
+        handlePayment(plan);
+    };
+
+    const handlePayment = async (plan) => {
+        if (!plan || plan.price === 0) {
+            toast.error("Invalid plan selected");
+            return;
+        }
+
+        const amount = plan.price * 100; // Amount in paise
+        const currency = "INR";
+        const receiptId = `receipt_${Date.now()}`;
+
+        try {
+            setLoading(true);
+
+            // Create order
+            const orderResponse = await healthService.post(
+                `/order/place`,
+                {
+                    amount,
+                    currency,
+                    receipt: receiptId,
+                    planId: plan._id,
+                    planName: plan.planName
+                },
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...(token && { token })
+                    },
+                }
+            );
+
+            console.log("Order created:", orderResponse);
+
+            const order = orderResponse.data.order || orderResponse.data;
+
+            // Configure Razorpay payment window
+            const paymentWindowConfig = {
+                key: "rzp_test_ROtYDJQILA2lJo", // Replace with your actual key
+                amount: order.amount,
+                currency: order.currency,
+                name: "Subscription Payment",
+                description: `${capitalizePlanName(plan.planName)} Plan`,
+                order_id: order.id,
+                handler: async (response) => {
+                    console.log("Payment Successful:", response);
+
+                    try {
+                        // Verify payment
+                        const validateRes = await healthService.post(
+                            `/order/verify`,
+                            {
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_signature: response.razorpay_signature,
+                                planId: plan._id
+                            },
+                            {
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    ...(token && { token })
+                                },
+                            }
+                        );
+
+                        console.log("Validation response:", validateRes.data);
+
+                        if (validateRes.data.msg === "success" || validateRes.data.success) {
+                            // Update subscription after successful payment
+                            const updated = await handleSubscriptionUpdate(
+                                plan._id,
+                                response.razorpay_payment_id,
+                                response.razorpay_order_id
+                            );
+                            
+                            if (updated) {
+                                toast.success("Subscription activated successfully! 🎉");
+                            }
+                        } else {
+                            toast.error("Payment verification failed");
+                        }
+                    } catch (error) {
+                        console.error("Payment validation failed:", error);
+                        toast.error("Payment verification failed. Please contact support.");
+                    }
+                },
+                prefill: {
+                    name: profileData?.name || "",
+                    email: profileData?.email || "",
+                    contact: profileData?.phone || ""
+                },
+                theme: {
+                    color: "#3b82f6"
+                },
+                modal: {
+                    ondismiss: () => {
+                        console.log("Payment modal dismissed");
+                        setLoading(false);
+                    }
+                }
+            };
+
+            // Create and open payment window
+            const paymentWindow = new window.Razorpay(paymentWindowConfig);
+
+            paymentWindow.on("payment.failed", function (response) {
+                console.error("Payment failed:", response.error);
+                toast.error(`Payment failed: ${response.error.description}`);
+                setLoading(false);
+            });
+
+            paymentWindow.open();
+        } catch (error) {
+            console.error("Error creating order:", error);
+            toast.error("Error processing payment. Please try again.");
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div>
+            {/* Pricing Section */}
+            <section className="py-20 bg-gray-50 dark:bg-gray-900">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16">
+                        <h2 className="text-4xl font-bold mb-4">Choose Your Perfect Plan</h2>
+                        <p className="text-xl text-gray-600 dark:text-gray-300">
+                            Start free, upgrade when you need more
+                        </p>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {plans.map((plan, index) => (
+                            <div 
+                                key={plan._id || index} 
+                                className="relative rounded-2xl p-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+                            >
+                                <div className="text-center mb-8">
+                                    <h3 className="text-2xl font-bold mb-2">
+                                        {capitalizePlanName(plan.planName)}
+                                    </h3>
+                                    <div className="mb-4">
+                                        <span className="text-4xl font-bold">
+                                            {formatPrice(plan.price)}
+                                        </span>
+                                        <span className="text-gray-500 dark:text-gray-400">
+                                            /{getPeriod(plan.price)}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <ul className="space-y-4 mb-8">
+                                    {renderFeatures(plan)}
+                                </ul>
+
+                                <button 
+                                    onClick={() => initiateBuying(plan)} 
+                                    disabled={loading}
+                                    className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${getButtonStyle(plan.planName)}`}
+                                >
+                                    {loading ? 'Processing...' : getButtonText(plan.planName)}
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+        </div>
+    )
+}
+
+export default PricingDashboard
+
+
+
+__________________________________________________________________________________________________________
+
+
+
+import { RefreshCw, Plus, Image as PosterIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import Button from "../../../components/ui/button/Button";
+import PosterCard from "./PosterCard";
+
+const PosterGallery = ({
+  poster,
+  loading,
+  error,
+  refreshing,
+  onEdit,
+  onAdd,
+  onRefresh,
+  onRetry,
+  onPosterView,
+  onPageChange,
+  pagination
+}) => {
+  const handlePageChange = (pageNumber) => {
+    if (onPageChange && pageNumber !== pagination?.currentPage) {
+      onPageChange(pageNumber);
+    }
+  };
+
+  const renderPagination = () => {
+    if (!pagination || pagination.totalPages <= 1) return null;
+
+    const { currentPage, totalPages, hasPrev, hasNext } = pagination;
+    const pages = [];
+
+    // Generate page numbers with ellipsis
+    for (let i = 1; i <= totalPages; i++) {
+      // Show first page, last page, current page, and pages around current
+      if (
+        i === 1 ||
+        i === totalPages ||
+        (i >= currentPage - 1 && i <= currentPage + 1)
+      ) {
+        pages.push(i);
+      } else if (pages[pages.length - 1] !== '...') {
+        pages.push('...');
+      }
+    }
+
+    return (
+      <div className="flex items-center justify-center gap-2 pt-6 border-t border-gray-100 dark:border-white/[0.05]">
+        {/* Previous Button */}
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={!hasPrev || loading}
+          className="px-3 py-2 rounded-lg border border-gray-200 dark:border-white/[0.05] bg-white dark:bg-white/[0.03] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/[0.05] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span className="hidden sm:inline">Previous</span>
+        </button>
+
+        {/* Page Numbers */}
+        <div className="flex items-center gap-1">
+          {pages.map((page, index) => {
+            if (page === '...') {
+              return (
+                <span
+                  key={`ellipsis-${index}`}
+                  className="px-3 py-2 text-gray-400 dark:text-gray-500"
+                >
+                  ...
+                </span>
+              );
+            }
+
+            return (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                disabled={loading}
+                className={`min-w-[40px] px-3 py-2 rounded-lg border transition-colors ${
+                  currentPage === page
+                    ? 'border-blue-500 bg-blue-500 text-white font-medium'
+                    : 'border-gray-200 dark:border-white/[0.05] bg-white dark:bg-white/[0.03] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/[0.05]'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {page}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Next Button */}
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={!hasNext || loading}
+          className="px-3 py-2 rounded-lg border border-gray-200 dark:border-white/[0.05] bg-white dark:bg-white/[0.03] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/[0.05] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+        >
+          <span className="hidden sm:inline">Next</span>
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  };
+
+  if (loading && !refreshing) {
+    return (
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+        <div className="p-8 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-500 dark:text-gray-400">Loading posters...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !poster.length) {
+    return (
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+        <div className="p-8 text-center">
+          <div className="text-red-500 dark:text-red-400 mb-4">
+            <PosterIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
+            <p className="text-lg font-medium">Failed to load posters</p>
+            <p className="text-sm mt-1">{error}</p>
+          </div>
+          <Button 
+            onClick={onRetry}
+            variant="primary"
+            className="mt-4"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-100 dark:border-white/[0.05] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3">
+          <PosterIcon className="w-6 h-6 text-gray-500 dark:text-gray-400" />
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+            Poster Gallery {pagination && `(${pagination.totalCount})`}
+          </h2>
+          {error && poster.length > 0 && (
+            <span className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded">
+              Sync Error
+            </span>
+          )}
+        </div>
+        
+        <div className="flex gap-2">
+          <Button 
+            onClick={onRefresh}
+            variant="outline"
+            size="sm"
+            disabled={refreshing}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+          
+          <Button 
+            onClick={onAdd}
+            variant="primary"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Poster
+          </Button>
+        </div>
+      </div>
+
+      {/* Gallery Content */}
+      <div className="p-6">
+        {poster.length === 0 ? (
+          /* Empty State */
+          <div className="text-center py-12">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
+              <PosterIcon className="w-10 h-10 text-gray-400 dark:text-gray-500" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              No posters found
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">
+              Get started by creating your first poster. You can upload images and customize them with templates.
+            </p>
+            <Button 
+              onClick={onAdd}
+              variant="primary"
+              className="inline-flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Create First Poster
+            </Button>
+          </div>
+        ) : (
+          <>
+            {/* Gallery Grid */}
+            <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 ${loading || refreshing ? 'opacity-50 pointer-events-none' : ''}`}>
+              {poster.map((posterItem) => (
+                <PosterCard
+                  key={posterItem._id}
+                  poster={posterItem}
+                  onEdit={onEdit}
+                  onPosterView={onPosterView}
+                />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {renderPagination()}
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default PosterGallery;

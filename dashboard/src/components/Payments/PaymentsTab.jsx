@@ -3,6 +3,9 @@ import { API_BASE, ENDPOINTS } from '../../config/api';
 import { getAuthHeaders } from '../../utils/authUtils';
 import PaymentForm from './PaymentForm';
 import PaymentCard from './PaymentCard';
+import PaymentTable from './PaymentTable';
+import axios from 'axios';
+import { healthService } from '../../api/axios';
 
 const PaymentsTab = () => {
   const [payments, setPayments] = useState([]);
@@ -16,7 +19,7 @@ const PaymentsTab = () => {
   const fetchPayments = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}${ENDPOINTS.PAYMENTS}`);
+      const res = await axios.healthService(`/${ENDPOINTS.PAYMENTS}`);
       const data = await res.json();
       setPayments(data.data || []);
     } catch (err) {
@@ -28,7 +31,7 @@ const PaymentsTab = () => {
 
   const handleCreatePayment = async (formData) => {
     try {
-      const res = await fetch(`${API_BASE}${ENDPOINTS.PAYMENTS}`, {
+      const res = await healthService.post(`${API_BASE}${ENDPOINTS.PAYMENTS}`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -73,7 +76,7 @@ const PaymentsTab = () => {
 
   const handleMarkPaid = async (id) => {
     try {
-      await fetch(`${API_BASE}${ENDPOINTS.SINGLE_PAYMENT(id)}`, {
+      await healthService.put(`/${ENDPOINTS.SINGLE_PAYMENT(id)}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({ paymentComplete: true })
@@ -119,6 +122,17 @@ const PaymentsTab = () => {
           />
         ))}
       </div>
+
+       {/* <div className="grid grid-cols-1 gap-4">
+        {payments.map((payment) => (
+          <PaymentTable
+            key={payment._id} 
+            payment={payment} 
+            onMarkPaid={handleMarkPaid}
+            onUpdate={handleUpdatePayment}
+          />
+        ))}
+      </div> */}
 
       {!loading && payments.length === 0 && (
         <div className="text-center py-12 bg-white rounded-lg shadow">

